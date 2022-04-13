@@ -32,21 +32,50 @@ namespace WishList.Controllers
         }
 
         [HttpPost, AllowAnonymous]
-        public IActionResult Register(RegisterViewModel registerData)
+        public IActionResult Register(RegisterViewModel model)
         {
             if (!ModelState.IsValid)
             {
-                return View("Register", registerData);
+                return View("Register", model);
             }
-            var result = _userManager.CreateAsync(new ApplicationUser() { Email = registerData.Email, UserName = registerData.Email}, registerData.Password).Result;
+            var result = _userManager.CreateAsync(new ApplicationUser() { Email = model.Email, UserName = model.Email}, model.Password).Result;
             if (!result.Succeeded)
             {
                 foreach(var error in result.Errors)
                 {
                     ModelState.AddModelError("Password", error.Description);
                 }
-                return View("Register", ModelState);
+                return View("Register", model);
             }
+            return RedirectToAction("Index", "Home");
+        }
+
+        [HttpGet, AllowAnonymous]
+        public IActionResult Login()
+        {
+            return View("Login");
+        }
+
+        [HttpPost, AllowAnonymous, ValidateAntiForgeryToken]
+        public IActionResult Login(LoginViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View("Login", model);
+            }
+            var result = _signInManager.PasswordSignInAsync(model.Email, model.Password, false, false).Result;
+            if (!result.Succeeded)
+            {
+                ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                return View("Login", model);
+            }
+            return RedirectToAction("Index", "Item");
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public IActionResult Logout()
+        {
+            _signInManager.SignOutAsync();
             return RedirectToAction("Index", "Home");
         }
     }
